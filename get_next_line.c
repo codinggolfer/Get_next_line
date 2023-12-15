@@ -6,7 +6,7 @@
 /*   By: eagbomei <eagbomei@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/05 14:24:16 by eagbomei          #+#    #+#             */
-/*   Updated: 2023/12/12 16:14:19 by eagbomei         ###   ########.fr       */
+/*   Updated: 2023/12/15 14:12:30 by eagbomei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,7 @@ static char	*next_plz(char *lines)
 
 	i = 0;
 	j = 0;
+	line = lines;
 	while (lines[i] != '\0' && lines[i] != '\n')
 		i++;
 	if (!lines[i])
@@ -27,13 +28,10 @@ static char	*next_plz(char *lines)
 		free(lines);
 		return (NULL);
 	}
-	line = ft_calloc(ft_strlen(lines) - i, sizeof(char));
-	if (line == NULL)
-		return (NULL);
 	i++;
 	while (lines[i])
 		line[j++] = lines[i++];
-	free (lines);
+	line[j++] = '\0';
 	return (line);
 }
 
@@ -78,27 +76,23 @@ static char	*find_line(char *lines)
 static char	*readfile(int fd, char *lines)
 {
 	ssize_t		bytes;
-	char		*ret;
+	char		ret[BUFFER_SIZE +1];
 
 	if (!lines)
 		lines = ft_calloc(1, 1);
 	if (lines == NULL)
 		return (NULL);
-	ret = ft_calloc(sizeof(char), BUFFER_SIZE + 1);
-	if (ret == NULL)
-		return (free(lines), NULL);
 	bytes = 1;
 	while (bytes > 0)
 	{
 		bytes = read(fd, ret, BUFFER_SIZE);
 		if (bytes == -1)
-			return (free(lines), NULL);
+			return (NULL);
 		ret[bytes] = '\0';
 		lines = append_line(lines, ret);
 		if (lines == NULL || ft_strchr(ret, '\n'))
 			break ;
 	}
-	free(ret);
 	return (lines);
 }
 
@@ -114,37 +108,18 @@ char	*get_next_line(int fd)
 		return (NULL);
 	}
 	lines = readfile(fd, lines);
-	if (lines == NULL)
+	if (lines == NULL || lines[0] == '\0')
+	{
+		free(lines);
+		lines = NULL;
 		return (NULL);
+	}
 	retstr = find_line(lines);
+	if (retstr == NULL)
+	{
+		lines = NULL;
+		return (NULL);
+	}
 	lines = next_plz(lines);
 	return (retstr);
 }
-
-/*int	main(void)
-{
-	char *lines;
-	
-	int		i = 0;
-	int		fd;
-
-	fd = open("test.txt", O_RDONLY);
-	if (fd < 0)
-	{
-		printf("doesn't work\n");
-		close (fd);
-		return (0);
-	}
-	while (1)
-	{
-		lines = get_next_line(fd);
-		if (lines == NULL)
-			break ;
-		i++;
-		printf("[%d] :%s", i, lines);
-		free(lines);
-		lines = NULL;
-	}
-	printf("%s", lines);
-	close (fd);
-}*/
